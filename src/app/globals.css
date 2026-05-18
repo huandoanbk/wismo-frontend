@@ -1,3 +1,65 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* WISMO brand — logo green primary, clean neutral palette */
+  --color-wismo-primary:        #2BB540;
+  --color-wismo-primary-hover:  #229935;
+  --color-wismo-primary-light:  #EDFBF0;
+  --color-wismo-bg:             #F8FAFC;
+  --color-wismo-sidebar-bg:     #F1F5F9;
+  --color-wismo-message-user:   #EDFBF0;
+  --color-wismo-message-bot:    #FFFFFF;
+  --color-wismo-text:           #0F172A;
+  --color-wismo-text-muted:     #64748B;
+  --color-wismo-text-light:     #94A3B8;
+  --color-wismo-active:         #2BB540;
+  --color-wismo-resolved:       #94A3B8;
+  --color-wismo-paused:         #F59E0B;
+  --color-wismo-crisis:         #EF4444;
+  --color-wismo-crisis-border:  #DC2626;
+  --color-wismo-warning:        #F59E0B;
+  --color-wismo-border:         #E2E8F0;
+  --color-wismo-border-light:   #F1F5F9;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Message entry animation */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeSlideIn 0.18s ease-out both;
+}
+
+/* Thin, subtle scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}

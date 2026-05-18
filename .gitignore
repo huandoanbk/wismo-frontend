@@ -40,3 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# local agent/worker artifacts and specs (keep local, do not track in git)
+AGENTS.md
+CLAUDE.md
+agent-progress.md
+tech-debt.md
+.agents/
+.claude/
+.codex/
+openspec/
+project-spec
+project-spec/
