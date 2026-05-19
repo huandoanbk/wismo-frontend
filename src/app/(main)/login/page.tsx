@@ -7,6 +7,7 @@ import { LoginForm } from '@/components/auth/LoginForm'
 import { GoogleOneTap } from '@/components/auth/GoogleOneTap'
 import { useAuth } from '@/hooks/useAuth'
 import { withQueryParams } from '@/lib/authRoute'
+import type { LoginRequest } from '@/types/api'
 
 /**
  * /login route. Redirects to /chat after successful login.
@@ -19,19 +20,32 @@ function LoginPageInner() {
   const { user, sessionState, consentState, isLoading, isLoadingSession, error, login, googleLogin } = useAuth()
 
   const reason = searchParams.get('reason')
+  const returnTo = searchParams.get('return_to')
+  const attachChatId = searchParams.get('attach_chat_id')
+
+  const handleLogin = (req: LoginRequest) => {
+    login({
+      ...req,
+      ...(attachChatId ? { attach_chat_id: attachChatId } : {}),
+    })
+  }
+
+  const handleGoogleLogin = (credential: string) => {
+    googleLogin(credential, attachChatId)
+  }
 
   useEffect(() => {
     if (sessionState !== 'registered') return
 
     if (consentState === 'accepted' || user) {
-      router.replace('/chat')
+      router.replace(returnTo ?? '/chat')
       return
     }
 
     if (consentState === 'required') {
       router.replace(withQueryParams('/consent', { mode: 'reconsent' }))
     }
-  }, [consentState, router, sessionState, user])
+  }, [consentState, returnTo, router, sessionState, user])
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">
@@ -46,12 +60,12 @@ function LoginPageInner() {
         )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-wismo-border p-6">
-          <LoginForm onSubmit={login} isLoading={isLoading} error={error} onGoogleCredential={googleLogin} />
+          <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={error} onGoogleCredential={handleGoogleLogin} />
         </div>
       </div>
 
       {!user && !isLoadingSession && (
-        <GoogleOneTap onCredential={googleLogin} />
+        <GoogleOneTap onCredential={handleGoogleLogin} />
       )}
     </div>
   )

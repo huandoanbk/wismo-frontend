@@ -102,6 +102,7 @@
     "reconsent_review_action": "Review consent again",
     "reconsent_leave_action": "Leave chat",
     "quota_exhausted_message": "You've reached your message limit. Please try again later.",
+    "quota_exhausted_login": "Sign in",
     "chat_options": "Chat options",
     "delete_this_chat": "Delete chat",
     "delete_confirm_title": "Delete this chat?",

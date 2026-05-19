@@ -261,6 +261,7 @@ function ChatView() {
             onRetry={retryLastMessage}
             error={error}
             quotaExhausted={quotaExhausted}
+            chatId={chatId}
             firstMessage={firstMessage}
           />
         )}

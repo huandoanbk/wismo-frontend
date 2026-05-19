@@ -16,6 +16,12 @@ export interface RegisterResponse {
 export interface LoginRequest {
   email: string
   password: string
+  attach_chat_id?: string | null
+}
+
+export interface GoogleLoginRequest {
+  credential: string
+  attach_chat_id?: string | null
 }
 
 export interface UserProfile {

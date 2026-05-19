@@ -70,8 +70,8 @@ export function ConsentScreen({ mode, onConsented, onDeclined }: ConsentScreenPr
           <p className="font-medium text-red-600">{t('description_not_therapy')}</p>
           <p className="text-xs">
             {t('emergency_label')}{' '}
-            <a href="tel:0925250111" className="font-medium text-wismo-primary">
-              📞 09 2525 0111
+            <a href="tel:112" className="font-medium text-wismo-primary">
+              📞 112
             </a>
           </p>
         </div>

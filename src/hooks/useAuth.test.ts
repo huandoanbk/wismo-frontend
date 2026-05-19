@@ -193,6 +193,34 @@ describe('useAuth', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('test_login_with_attach_chat_id_forwards_payload', async () => {
+    mockApiFetch
+      .mockImplementationOnce(unauthenticatedSessionRes)
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            session_state: 'registered',
+            identity_type: 'user',
+            user: { email: 'a@b.com', display_name: '', email_verified: true },
+            consent_state: 'required',
+          }),
+      } as Response)
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider })
+    await waitFor(() => expect(result.current.isLoadingSession).toBe(false))
+
+    await act(async () => {
+      await result.current.login({ email: 'a@b.com', password: 'pass', attach_chat_id: 'chat-123' })
+    })
+
+    expect(mockApiFetch).toHaveBeenNthCalledWith(2, '/api/accounts/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'a@b.com', password: 'pass', attach_chat_id: 'chat-123' }),
+    })
+  })
+
   it('test_login_401_sets_error_message', async () => {
     mockApiFetch
       .mockImplementationOnce(unauthenticatedSessionRes)
@@ -207,6 +235,25 @@ describe('useAuth', () => {
 
     expect(result.current.error).toBe('invalid_credentials')
     expect(result.current.user).toBeNull()
+  })
+
+  it('test_login_unknown_error_falls_back_to_generic', async () => {
+    mockApiFetch
+      .mockImplementationOnce(unauthenticatedSessionRes)
+      .mockResolvedValueOnce({
+        status: 404,
+        ok: false,
+        json: () => Promise.resolve({ error: 'some_new_backend_code' }),
+      } as Response)
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider })
+    await waitFor(() => expect(result.current.isLoadingSession).toBe(false))
+
+    await act(async () => {
+      await result.current.login({ email: 'a@b.com', password: 'wrong', attach_chat_id: 'chat-123' })
+    })
+
+    expect(result.current.error).toBe('generic')
   })
 
   it('test_login_403_sets_email_verification_required_error', async () => {
@@ -360,5 +407,52 @@ describe('useAuth', () => {
 
     expect(result.current.user).toBeNull()
     expect(result.current.sessionState).toBe('unauthenticated')
+  })
+
+  it('test_google_login_with_attach_chat_id_forwards_payload', async () => {
+    mockApiFetch
+      .mockImplementationOnce(unauthenticatedSessionRes)
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            session_state: 'registered',
+            identity_type: 'user',
+            user: { email: 'a@b.com', display_name: '', email_verified: true },
+            consent_state: 'accepted',
+          }),
+      } as Response)
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider })
+    await waitFor(() => expect(result.current.isLoadingSession).toBe(false))
+
+    await act(async () => {
+      await result.current.googleLogin('google-token', 'chat-999')
+    })
+
+    expect(mockApiFetch).toHaveBeenNthCalledWith(2, '/api/accounts/google/login', {
+      method: 'POST',
+      body: JSON.stringify({ credential: 'google-token', attach_chat_id: 'chat-999' }),
+    })
+  })
+
+  it('test_google_login_unknown_error_falls_back_to_default_google_error', async () => {
+    mockApiFetch
+      .mockImplementationOnce(unauthenticatedSessionRes)
+      .mockResolvedValueOnce({
+        status: 401,
+        ok: false,
+        json: () => Promise.resolve({ error: 'some_new_backend_code' }),
+      } as Response)
+
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider })
+    await waitFor(() => expect(result.current.isLoadingSession).toBe(false))
+
+    await act(async () => {
+      await result.current.googleLogin('google-token', 'chat-999')
+    })
+
+    expect(result.current.error).toBe('error_google_failed')
   })
 })

@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import type { ChatTurn } from '@/types/api'
 import type { TurnState, PendingTurn, CompletedTurn } from '@/hooks/chat/useSendMessage'
 import { useAuth } from '@/hooks/useAuth'
+import { withQueryParams } from '@/lib/authRoute'
 import { TurnList } from './TurnList'
 import { Composer } from './Composer'
 import { ConsentModal } from '@/components/consent/ConsentModal'
@@ -20,11 +21,12 @@ interface ChatPanelProps {
   onRetry: () => void
   error: string | null
   quotaExhausted: boolean
+  chatId: string
   firstMessage?: string
 }
 
 /** Maps gate/stream error codes to i18n keys and action config. */
-function useErrorConfig(error: string | null, onRetry: () => void) {
+function useErrorConfig(error: string | null, onRetry: () => void, chatId: string) {
   const t = useTranslations('chat')
   const router = useRouter()
   const { sessionState } = useAuth()
@@ -83,6 +85,10 @@ function useErrorConfig(error: string | null, onRetry: () => void) {
     return {
       message: t('send_error_quota_guest'),
       action: { label: t('send_action_register'), onClick: () => router.push('/register') },
+      secondAction: {
+        label: t('quota_exhausted_login'),
+        onClick: () => router.push(withQueryParams('/login', { return_to: `/chat/${chatId}`, attach_chat_id: chatId })),
+      },
     }
   }
 
@@ -103,12 +109,24 @@ export function ChatPanel({
   onRetry,
   error,
   quotaExhausted,
+  chatId,
   firstMessage,
 }: ChatPanelProps) {
   const t = useTranslations('chat')
   const router = useRouter()
   const { sessionState } = useAuth()
-  const errorConfig = useErrorConfig(error, onRetry)
+  const errorConfig = useErrorConfig(error, onRetry, chatId)
+  const shouldShowQuotaAuthActions = sessionState !== 'registered'
+  const quotaExhaustedConfig = quotaExhausted ? {
+    message: t('quota_exhausted_message'),
+    ...(shouldShowQuotaAuthActions && {
+      registerAction: { label: t('send_action_register'), onClick: () => router.push('/register') },
+      loginAction: {
+        label: t('quota_exhausted_login'),
+        onClick: () => router.push(withQueryParams('/login', { return_to: `/chat/${chatId}`, attach_chat_id: chatId })),
+      },
+    }),
+  } : null
   const [showReconsentModal, setShowReconsentModal] = useState(false)
   const [reconsentDeclined, setReconsentDeclined] = useState(false)
 
@@ -147,6 +165,7 @@ export function ChatPanel({
         pendingTurn={pendingTurn}
         turnState={turnState}
         errorConfig={showError ? errorConfig : null}
+        quotaExhaustedConfig={quotaExhaustedConfig}
         firstMessage={firstMessage}
       />
 
@@ -157,13 +176,6 @@ export function ChatPanel({
             <p className="text-sm text-wismo-text-muted text-center">
               {t('send_error_in_progress')}
             </p>
-          )}
-
-          {/* Quota exhausted block */}
-          {quotaExhausted && (
-            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 text-center">
-              {t('quota_exhausted_message')}
-            </div>
           )}
 
           {reconsentDeclined && (

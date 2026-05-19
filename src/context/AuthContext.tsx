@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { apiFetch } from '@/lib/api'
-import type { ConsentState, GuestInitResponse, LoginRequest, RegisterRequest, SessionResponse, SessionUser, UserProfile } from '@/types/api'
+import type { ConsentState, GoogleLoginRequest, GuestInitResponse, LoginRequest, RegisterRequest, SessionResponse, SessionUser, UserProfile } from '@/types/api'
 
 interface AuthContextValue {
   user: UserProfile | null
@@ -17,7 +17,7 @@ interface AuthContextValue {
   register: (req: RegisterRequest) => Promise<void>
   logout: () => Promise<void>
   initGuest: () => Promise<void>
-  googleLogin: (credential: string) => Promise<void>
+  googleLogin: (credential: string, attachChatId?: string | null) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -31,6 +31,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoadingSession, setIsLoadingSession] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [registrationEmail, setRegistrationEmail] = useState<string | null>(null)
+
+  const readErrorCode = useCallback(async (res: Response): Promise<string | null> => {
+    try {
+      const body = await res.json() as { error?: string }
+      return typeof body.error === 'string' ? body.error : null
+    } catch {
+      return null
+    }
+  }, [])
 
   const applySessionResponse = useCallback((data: SessionResponse) => {
     setSessionState(data.session_state)
@@ -88,9 +97,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         body: JSON.stringify(req),
       })
-      if (res.status === 400) { setError('invalid_request'); return }
-      if (res.status === 401) { setError('invalid_credentials'); return }
-      if (res.status === 403) { setError('email_verification_required'); return }
+      if (!res.ok) {
+        const code = await readErrorCode(res)
+        if (code === 'invalid_request' || code === 'invalid_credentials' || code === 'email_verification_required') {
+          setError(code)
+          return
+        }
+        if (res.status === 401) { setError('invalid_credentials'); return }
+        if (res.status === 403) { setError('email_verification_required'); return }
+        if (res.status === 400) { setError('invalid_request'); return }
+      }
       if (!res.ok) { setError('generic'); return }
       const data: SessionResponse = await res.json()
       applySessionResponse(data)
@@ -99,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [applySessionResponse])
+  }, [applySessionResponse, readErrorCode])
 
   const register = useCallback(async (req: RegisterRequest) => {
     setIsLoading(true)
@@ -165,17 +181,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/login'
   }, [applySessionResponse])
 
-  const googleLogin = useCallback(async (credential: string) => {
+  const googleLogin = useCallback(async (credential: string, attachChatId?: string | null) => {
     setIsLoading(true)
     setError(null)
     try {
+      const payload: GoogleLoginRequest = {
+        credential,
+        ...(attachChatId ? { attach_chat_id: attachChatId } : {}),
+      }
       const res = await apiFetch('/api/accounts/google/login', {
         method: 'POST',
-        body: JSON.stringify({ credential }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setError((body as { error?: string })?.error ?? 'error_google_failed')
+        const code = await readErrorCode(res)
+        if (
+          code === 'invalid_request' ||
+          code === 'invalid_credentials' ||
+          code === 'google_account_conflict' ||
+          code === 'google_auth_not_configured'
+        ) {
+          setError(code)
+          return
+        }
+        setError('error_google_failed')
         return
       }
       const data: SessionResponse = await res.json()
@@ -185,7 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [applySessionResponse])
+  }, [applySessionResponse, readErrorCode])
 
   return (
     <AuthContext.Provider value={{

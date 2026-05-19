@@ -28,7 +28,7 @@ function Bubble({ text, isUser }: { text: string; isUser: boolean }) {
  * Animates once on mount; subsequent re-renders with same text are no-ops.
  * Scrolls the provided container to its bottom on each tick so the bubble stays visible.
  */
-function TypingBubble({ text, scrollContainer }: { text: string; scrollContainer: React.RefObject<HTMLDivElement | null> }) {
+function TypingBubble({ text, scrollContainer, onDone }: { text: string; scrollContainer: React.RefObject<HTMLDivElement | null>; onDone?: () => void }) {
   const [displayed, setDisplayed] = useState('')
 
   useEffect(() => {
@@ -45,7 +45,10 @@ function TypingBubble({ text, scrollContainer }: { text: string; scrollContainer
       if (scrollContainer.current) {
         scrollContainer.current.scrollTop = scrollContainer.current.scrollHeight
       }
-      if (done) clearInterval(timer)
+      if (done) {
+        clearInterval(timer)
+        onDone?.()
+      }
     }, 16)
 
     return () => clearInterval(timer)
@@ -74,6 +77,13 @@ function ControlBubble({ responseKey }: { responseKey: string }) {
 interface ErrorConfig {
   message: string
   action: { label: string; onClick: () => void } | null
+  secondAction?: { label: string; onClick: () => void }
+}
+
+interface QuotaExhaustedConfig {
+  message: string
+  loginAction?: { label: string; onClick: () => void }
+  registerAction?: { label: string; onClick: () => void }
 }
 
 interface TurnListProps {
@@ -83,13 +93,22 @@ interface TurnListProps {
   pendingTurn: PendingTurn | null
   turnState: 'idle' | 'sending' | 'streaming' | 'done' | 'error'
   errorConfig?: ErrorConfig | null
+  quotaExhaustedConfig?: QuotaExhaustedConfig | null
   /** Pre-send user text — shown immediately from chat.opening_input_text before pendingTurn is set. */
   firstMessage?: string
 }
 
-export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnState, errorConfig, firstMessage }: TurnListProps) {
+export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnState, errorConfig, quotaExhaustedConfig, firstMessage }: TurnListProps) {
   const t = useTranslations('chat')
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [lastTurnTypingDone, setLastTurnTypingDone] = useState(false)
+
+  // Reset typing-done flag when a new turn starts
+  useEffect(() => {
+    if (turnState === 'sending' || turnState === 'streaming') {
+      setLastTurnTypingDone(false)
+    }
+  }, [turnState])
 
   // Scroll the container directly — avoids scrollIntoView propagating to window/document
   useEffect(() => {
@@ -126,15 +145,22 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
 
         {/* Turns completed this session (accumulated, not re-fetched).
             TypingBubble animates once on mount; stable key preserves state across re-renders. */}
-        {completedTurns.map((turn, i) => (
-          <div key={turn.turnId ?? 'session-' + i}>
-            <Bubble text={turn.userText} isUser={true} />
-            {turn.responseKey
-              ? <ControlBubble responseKey={turn.responseKey} />
-              : <TypingBubble text={turn.assistantText} scrollContainer={scrollContainerRef} />
-            }
-          </div>
-        ))}
+        {completedTurns.map((turn, i) => {
+          const isLast = i === completedTurns.length - 1
+          return (
+            <div key={turn.turnId ?? 'session-' + i}>
+              <Bubble text={turn.userText} isUser={true} />
+              {turn.responseKey
+                ? <ControlBubble responseKey={turn.responseKey} />
+                : <TypingBubble
+                    text={turn.assistantText}
+                    scrollContainer={scrollContainerRef}
+                    onDone={isLast ? () => setLastTurnTypingDone(true) : undefined}
+                  />
+              }
+            </div>
+          )
+        })}
 
         {/* Active turn: unified rendering for firstMessage phase and pendingTurn phase.
             Same element stays mounted through the transition so animate-fade-in doesn't re-fire. */}
@@ -158,13 +184,25 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
               <div className="flex justify-start">
                 <div className="max-w-[85%] rounded-2xl text-sm leading-relaxed bg-red-50 border border-red-200 px-4 py-3 flex flex-col gap-2">
                   <p className="text-red-700">{errorConfig.message}</p>
-                  {errorConfig.action && (
-                    <button
-                      onClick={errorConfig.action.onClick}
-                      className="self-start text-sm font-medium text-white bg-wismo-primary rounded-lg px-3 py-1.5 hover:bg-wismo-primary-hover transition-colors"
-                    >
-                      {errorConfig.action.label}
-                    </button>
+                  {(errorConfig.action || errorConfig.secondAction) && (
+                    <div className="flex flex-wrap gap-2">
+                      {errorConfig.action && (
+                        <button
+                          onClick={errorConfig.action.onClick}
+                          className="text-sm font-medium text-white bg-wismo-primary rounded-lg px-3 py-1.5 hover:bg-wismo-primary-hover transition-colors"
+                        >
+                          {errorConfig.action.label}
+                        </button>
+                      )}
+                      {errorConfig.secondAction && (
+                        <button
+                          onClick={errorConfig.secondAction.onClick}
+                          className="text-sm font-medium text-wismo-primary border border-wismo-primary rounded-lg px-3 py-1.5 hover:bg-wismo-primary/10 transition-colors"
+                        >
+                          {errorConfig.secondAction.label}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -173,6 +211,35 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
         )}
 
         {isLoading && !showFirstMessage && <ThinkingDots />}
+
+        {/* Quota exhausted block — shown after TypingBubble animation completes */}
+        {quotaExhaustedConfig && lastTurnTypingDone && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl text-sm leading-relaxed bg-amber-50 border border-amber-200 px-4 py-3 flex flex-col gap-2">
+              <p className="text-amber-800">{quotaExhaustedConfig.message}</p>
+              {(quotaExhaustedConfig.loginAction || quotaExhaustedConfig.registerAction) && (
+                <div className="flex flex-wrap gap-2">
+                  {quotaExhaustedConfig.registerAction && (
+                    <button
+                      onClick={quotaExhaustedConfig.registerAction.onClick}
+                      className="text-sm font-medium text-white bg-wismo-primary rounded-lg px-3 py-1.5 hover:bg-wismo-primary-hover transition-colors"
+                    >
+                      {quotaExhaustedConfig.registerAction.label}
+                    </button>
+                  )}
+                  {quotaExhaustedConfig.loginAction && (
+                    <button
+                      onClick={quotaExhaustedConfig.loginAction.onClick}
+                      className="text-sm font-medium text-wismo-primary border border-wismo-primary rounded-lg px-3 py-1.5 hover:bg-wismo-primary/10 transition-colors"
+                    >
+                      {quotaExhaustedConfig.loginAction.label}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -102,6 +102,7 @@
     "reconsent_review_action": "Tarkista suostumus uudelleen",
     "reconsent_leave_action": "Poistu keskustelusta",
     "quota_exhausted_message": "Olet saavuttanut viestirajoituksesi. Yritä myöhemmin uudelleen.",
+    "quota_exhausted_login": "Kirjaudu sisään",
     "chat_options": "Keskusteluasetukset",
     "delete_this_chat": "Poista keskustelu",
     "delete_confirm_title": "Poistetaanko tämä keskustelu?",
