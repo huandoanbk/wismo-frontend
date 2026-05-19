@@ -164,8 +164,8 @@
     "button_decline": "En hyväksy",
     "error_retry": "Jotain meni pieleen. Yritä uudelleen.",
     "decline_modal_message": "Jos et hyväksy, et voi käyttää WISMOa.\n\nJos tarvitset apua nyt:",
-    "decline_crisis_phone_label": "Kriisipuhelin",
-    "decline_crisis_chat_label": "Sekasin-chat",
+    "decline_crisis_phone_label": "Hätänumero",
+    "decline_crisis_website_label": "Verkkosivusto",
     "decline_modal_back": "Palaa tarkastelemaan",
     "decline_modal_leave": "Poistu sivulta"
   },

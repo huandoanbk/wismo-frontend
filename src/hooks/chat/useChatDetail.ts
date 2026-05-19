@@ -13,14 +13,20 @@ interface UseChatDetailReturn {
 /**
  * Fetches a chat's metadata and full turn history from GET /api/chat/[id].
  * Re-fetches whenever chatId changes.
+ *
+ * @param initialData - Seed with the Chat object returned by createChat to skip the
+ *   initial fetch for newly-created chats. Turns start empty (correct for new chats).
  */
-export function useChatDetail(chatId: string): UseChatDetailReturn {
-  const [chat, setChat] = useState<Chat | null>(null)
+export function useChatDetail(chatId: string, initialData?: Chat): UseChatDetailReturn {
+  const [chat, setChat] = useState<Chat | null>(initialData ?? null)
   const [turns, setTurns] = useState<ChatTurn[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!initialData)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Skip fetch when seeded — chat was just created, turns are empty by definition.
+    if (initialData) return
+
     let cancelled = false
     setIsLoading(true)
     setError(null)
@@ -41,6 +47,8 @@ export function useChatDetail(chatId: string): UseChatDetailReturn {
       .finally(() => { if (!cancelled) setIsLoading(false) })
 
     return () => { cancelled = true }
+  // initialData is intentionally excluded — it's a mount-time seed, not a reactive dep.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId])
 
   return { chat, turns, isLoading, error }

@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { AppShell, useAppShell } from '@/components/layout/AppShell'
 import { ChatSidebar } from '@/components/chat/ChatSidebar'
 import { useCreateChat } from '@/hooks/chat/useCreateChat'
+import { setNewChatSeed } from '@/lib/newChatSeed'
 
 function NewChatView() {
   const router = useRouter()
@@ -28,7 +29,8 @@ function NewChatView() {
     setError(false)
     const chat = await createChat(text)
     if (chat) {
-      router.push(`/chat/${chat.chat_id}?first=${encodeURIComponent(text)}`)
+      setNewChatSeed(chat)
+      router.push(`/chat/${chat.chat_id}`)
     } else {
       setError(true)
     }

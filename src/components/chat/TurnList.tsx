@@ -83,7 +83,7 @@ interface TurnListProps {
   pendingTurn: PendingTurn | null
   turnState: 'idle' | 'sending' | 'streaming' | 'done' | 'error'
   errorConfig?: ErrorConfig | null
-  /** Optimistic first message text for newly-created chats — shown immediately on navigation. */
+  /** Pre-send user text — shown immediately from chat.opening_input_text before pendingTurn is set. */
   firstMessage?: string
 }
 
@@ -98,7 +98,7 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
     }
   }, [turns, completedTurns, pendingTurn])
 
-  // firstMessage is the optimistically-displayed user text before pendingTurn is set
+  // firstMessage phase: before pendingTurn is set by the auto-trigger
   const showFirstMessage = !!firstMessage && turns.length === 0 && completedTurns.length === 0 && pendingTurn === null
   const hasContent = turns.length > 0 || completedTurns.length > 0 || pendingTurn !== null || showFirstMessage
 
@@ -136,18 +136,23 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
           </div>
         ))}
 
-        {/* In-flight or failed turn: user bubble always visible; assistant varies by state.
-            Always show ThinkingDots during pending — animation runs in completedTurns. */}
-        {showPendingUser && (
+        {/* Active turn: unified rendering for firstMessage phase and pendingTurn phase.
+            Same element stays mounted through the transition so animate-fade-in doesn't re-fire. */}
+        {(showFirstMessage || showPendingUser) && (
           <div className="flex flex-col gap-2">
-            <Bubble text={pendingTurn!.userText} isUser={true} />
-            {showPendingAssistant && (
-              pendingTurn!.responseKey !== undefined ? (
-                <ControlBubble responseKey={pendingTurn!.responseKey} />
+            {/* User bubble: firstMessage before pendingTurn is set, pendingTurn after */}
+            <Bubble text={pendingTurn !== null ? pendingTurn.userText : firstMessage!} isUser={true} />
+
+            {/* Assistant side: same DOM position for both phases — no remount flash.
+                showFirstMessage = waiting for auto-trigger; showPendingAssistant = in-flight. */}
+            {(showFirstMessage || showPendingAssistant) && (
+              pendingTurn?.responseKey !== undefined ? (
+                <ControlBubble responseKey={pendingTurn.responseKey} />
               ) : (
                 <ThinkingDots />
               )
             )}
+
             {/* Error bubble inline with failed turn */}
             {turnState === 'error' && errorConfig && (
               <div className="flex justify-start">
@@ -167,15 +172,6 @@ export function TurnList({ turns, isLoading, completedTurns, pendingTurn, turnSt
           </div>
         )}
 
-        {/* Optimistic first message: shown from navigation until pendingTurn takes over */}
-        {showFirstMessage && (
-          <div className="flex flex-col gap-2">
-            <Bubble text={firstMessage!} isUser={true} />
-            <ThinkingDots />
-          </div>
-        )}
-
-        {/* Initial load spinner — only when no optimistic message to show */}
         {isLoading && !showFirstMessage && <ThinkingDots />}
       </div>
     </div>

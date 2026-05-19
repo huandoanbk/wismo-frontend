@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useRef, useState, useCallback } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { AppShell, useAppShell } from '@/components/layout/AppShell'
@@ -11,6 +11,7 @@ import { Under18Block } from '@/components/auth/Under18Block'
 import { useChatDetail } from '@/hooks/chat/useChatDetail'
 import { useSendMessage } from '@/hooks/chat/useSendMessage'
 import { useDeleteChat } from '@/hooks/chat/useDeleteChat'
+import { takeNewChatSeed } from '@/lib/newChatSeed'
 
 /* ─── Chat options menu (⋯ button + confirm modal) ─────────────── */
 
@@ -123,10 +124,17 @@ function ChatView() {
   const chatId = params.id
   const router = useRouter()
   const t = useTranslations('chat')
-  const searchParams = useSearchParams()
-  const firstMessage = searchParams.get('first') ?? undefined
 
-  const { chat, turns, isLoading, error: detailError } = useChatDetail(chatId)
+  // useRef ensures takeNewChatSeed is called only once even in React Strict Mode
+  // (which invokes the component body twice — useMemo would consume the seed on the
+  // first discarded invocation, leaving null for the second real render).
+  const initialChatRef = useRef<import('@/types/api').Chat | null | undefined>(undefined)
+  if (initialChatRef.current === undefined) {
+    initialChatRef.current = takeNewChatSeed(chatId)
+  }
+  const initialChat = initialChatRef.current ?? undefined
+
+  const { chat, turns, isLoading, error: detailError } = useChatDetail(chatId, initialChat)
   const {
     sendMessage,
     retryLastMessage,
@@ -137,6 +145,14 @@ function ChatView() {
     quotaExhausted,
     chatDisplayName,
   } = useSendMessage(chatId)
+
+  // Bridge the gap between page mount and pendingTurn being set by the auto-trigger.
+  // Derives from chat.opening_input_text so it works whether the seed was used or
+  // the detail was fetched normally.
+  const firstMessage =
+    turns.length === 0 && completedTurns.length === 0 && pendingTurn === null
+      ? chat?.opening_input_text || undefined
+      : undefined
 
   const chatNameUpdate = chatDisplayName ? { chatId, displayName: chatDisplayName } : undefined
 
@@ -152,10 +168,11 @@ function ChatView() {
     completedTurns.some(t => t.responseKey === 'blocked_minor') ||
     pendingTurn?.responseKey === 'blocked_minor'
 
-  // Prevent double auto-trigger in React StrictMode
   const hasSentRef = useRef(false)
 
-  // Auto-trigger first message when entering a newly created chat
+  // Auto-trigger first message when entering a newly created chat.
+  // hasSentRef persists through Strict Mode remount — the first async call runs to
+  // completion on the remounted component; no cleanup needed here.
   useEffect(() => {
     if (
       !isLoading &&

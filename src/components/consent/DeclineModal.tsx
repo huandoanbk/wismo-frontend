@@ -31,18 +31,18 @@ export function DeclineModal({ isOpen, onClose, onLeave }: DeclineModalProps) {
 
         <div className="space-y-2 text-sm">
           <a
-            href="tel:0925250111"
+            href="tel:112"
             className="flex items-center gap-2 text-wismo-primary font-medium"
           >
-            📞 {t('decline_crisis_phone_label')}: 09 2525 0111
+            📞 {t('decline_crisis_phone_label')}: 112
           </a>
           <a
-            href="https://sekasin.fi"
+            href="https://112.fi"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-wismo-primary font-medium"
           >
-            💬 {t('decline_crisis_chat_label')}: sekasin.fi
+            🌐 {t('decline_crisis_website_label')}: 112.fi
           </a>
         </div>
 

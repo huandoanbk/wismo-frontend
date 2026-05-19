@@ -37,18 +37,18 @@ export default function AboutPage() {
               your country.
             </p>
             <p className="mt-3 text-xs bg-wismo-bg border border-wismo-border rounded-xl px-4 py-3 text-wismo-text-muted">
-              In Finland, you can reach the crisis line at{' '}
-              <a href="tel:09116" className="text-wismo-primary font-medium hover:underline">
-                09 116
+              In Finland, call{' '}
+              <a href="tel:112" className="text-wismo-primary font-medium hover:underline">
+                112
               </a>{' '}
-              (Kriisipuhelin, 24/7). For international resources, visit{' '}
+              or visit{' '}
               <a
-                href="https://www.befrienders.org"
+                href="https://112.fi"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-wismo-primary hover:underline"
               >
-                befrienders.org
+                112.fi
               </a>.
             </p>
           </section>

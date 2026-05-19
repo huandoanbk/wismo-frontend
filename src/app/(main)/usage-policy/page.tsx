@@ -29,18 +29,18 @@ export default function UsagePolicyPage() {
             </p>
             <p className="mt-2">
               If you are in crisis or need immediate support, please contact a qualified
-              professional or a crisis line in your country. In Finland:{' '}
-              <a href="tel:09116" className="text-wismo-primary hover:underline font-medium">
-                09 116
+              professional or emergency services. In Finland, call{' '}
+              <a href="tel:112" className="text-wismo-primary hover:underline font-medium">
+                112
               </a>{' '}
-              (Kriisipuhelin). International crisis resources are available at{' '}
+              or visit{' '}
               <a
-                href="https://www.befrienders.org"
+                href="https://112.fi"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-wismo-primary hover:underline"
               >
-                befrienders.org
+                112.fi
               </a>.
             </p>
           </section>

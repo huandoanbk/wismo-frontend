@@ -164,8 +164,8 @@
     "button_decline": "I do not agree",
     "error_retry": "Something went wrong. Please try again.",
     "decline_modal_message": "If you do not agree, you will not be able to use WISMO.\n\nIf you need support now:",
-    "decline_crisis_phone_label": "Kriisipuhelin",
-    "decline_crisis_chat_label": "Sekasin chat",
+    "decline_crisis_phone_label": "Emergency",
+    "decline_crisis_website_label": "Website",
     "decline_modal_back": "Go back and review",
     "decline_modal_leave": "Leave page"
   },

@@ -21,18 +21,18 @@ export function Under18Block() {
         <div className="text-sm text-wismo-text-muted pt-2">
           <p className="mb-2">{t('under18_support_intro')}</p>
           <a
-            href="tel:0925250111"
+            href="tel:112"
             className="flex items-center justify-center gap-2 text-wismo-primary font-medium mb-1"
           >
-            📞 09 2525 0111
+            📞 112
           </a>
           <a
-            href="https://sekasin.fi"
+            href="https://112.fi"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 text-wismo-primary font-medium"
           >
-            💬 sekasin.fi
+            🌐 112.fi
           </a>
         </div>
 

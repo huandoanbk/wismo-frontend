@@ -28,18 +28,18 @@ export function CrisisBubble() {
       <div className="max-w-[85%] rounded-2xl text-sm leading-relaxed animate-fade-in bg-wismo-message-bot text-wismo-text border border-wismo-border shadow-sm px-4 py-3 space-y-2">
         <p>{t('response_crisis_text')}</p>
         <a
-          href="tel:0925250111"
+          href="tel:112"
           className="flex items-center gap-2 text-wismo-primary font-medium hover:underline"
         >
-          📞 09 2525 0111
+          📞 112
         </a>
         <a
-          href="https://sekasin.fi"
+          href="https://112.fi"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-wismo-primary font-medium hover:underline"
         >
-          💬 sekasin.fi
+          🌐 112.fi
         </a>
       </div>
     </div>
