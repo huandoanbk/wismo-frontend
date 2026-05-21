@@ -251,8 +251,22 @@ function HelpMenu({ isExpanded }: { isExpanded: boolean }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ left: 0, bottom: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
+
+  const scheduleClose = () => {
+    cancelClose()
+    closeTimerRef.current = setTimeout(() => setOpen(false), 120)
+  }
 
   const handleMouseEnter = () => {
+    cancelClose()
     if (containerRef.current) {
       const r = containerRef.current.getBoundingClientRect()
       setPos({ left: r.right + 8, bottom: window.innerHeight - r.bottom })
@@ -261,7 +275,7 @@ function HelpMenu({ isExpanded }: { isExpanded: boolean }) {
   }
 
   return (
-    <div ref={containerRef} onMouseEnter={handleMouseEnter} onMouseLeave={() => setOpen(false)}>
+    <div ref={containerRef} onMouseEnter={handleMouseEnter} onMouseLeave={scheduleClose}>
       <button
         className={`flex items-center rounded-xl transition-colors cursor-pointer w-full px-3 py-2.5 text-wismo-text-muted hover:text-wismo-text hover:bg-wismo-bg ${
           isExpanded ? 'justify-start gap-3' : 'justify-center'
@@ -283,8 +297,8 @@ function HelpMenu({ isExpanded }: { isExpanded: boolean }) {
         <div
           className="fixed z-[200] bg-white rounded-xl shadow-lg border border-wismo-border py-1 min-w-[180px]"
           style={{ left: pos.left, bottom: pos.bottom }}
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
         >
           <Link href="/about" className="block px-4 py-2.5 text-sm text-wismo-text hover:bg-wismo-bg transition-colors">{tn('about')}</Link>
           <Link href="/contact" className="block px-4 py-2.5 text-sm text-wismo-text hover:bg-wismo-bg transition-colors">{tn('contact')}</Link>

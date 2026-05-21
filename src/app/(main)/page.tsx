@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/hooks/useAuth'
+import { GoogleOneTap } from '@/components/auth/GoogleOneTap'
 import { ConsentModal } from '@/components/consent/ConsentModal'
 import { withQueryParams } from '@/lib/authRoute'
 import type { GuestInitResponse, CreateChatResponse } from '@/types/api'
@@ -14,7 +15,7 @@ type PageStatus = 'idle' | 'loading' | 'consent' | 'declined' | 'error'
 export default function LandingPage() {
   const t = useTranslations('landing')
   const router = useRouter()
-  const { user, sessionState, consentState, isLoadingSession } = useAuth()
+  const { user, sessionState, consentState, isLoadingSession, googleLogin } = useAuth()
 
   // Registered users with accepted consent skip the landing page and go straight to chat.
   useEffect(() => {
@@ -157,6 +158,9 @@ export default function LandingPage() {
         onConsented={handleConsented}
         onDeclined={handleDeclined}
       />
+      {!user && !isLoadingSession && (
+        <GoogleOneTap onCredential={googleLogin} />
+      )}
     </div>
   )
 }
